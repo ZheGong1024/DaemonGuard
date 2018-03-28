@@ -20,7 +20,7 @@ public class Daemon {
 
   public Application mApplication;
 
-  public Class<? extends DaemonWorkService> mWorkService;
+  public Class<? extends Service> mWorkService;
 
   static final Map<Class<? extends Service>, ServiceConnection> BIND_STATE_MAP = new HashMap<>();
 
@@ -40,7 +40,7 @@ public class Daemon {
    * @param application Application context.
    */
   public void start(@NonNull Application application,
-      @NonNull Class<? extends DaemonWorkService> workService) {
+      @NonNull Class<? extends Service> workService) {
     this.mApplication = application;
     mWorkService = workService;
     isInitialized = true;
