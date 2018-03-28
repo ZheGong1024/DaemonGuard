@@ -15,7 +15,7 @@ public class MyWorkerService extends DaemonWorkService {
   private static final String TAG = "MyWorkerService";
 
   //是否 任务完成, 不再需要服务运行?
-  public static boolean sShouldStopService;
+  public static boolean sShouldStopService = false;
   public static Disposable sDisposable;
 
   public static void stopService() {
@@ -44,7 +44,7 @@ public class MyWorkerService extends DaemonWorkService {
       }
     }).subscribe(new Consumer<Long>() {
       @Override public void accept(Long aLong) throws Exception {
-        Log.d(TAG, "");
+        Log.d(TAG, "working");
       }
     });
   }
