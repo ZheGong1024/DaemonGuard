@@ -44,6 +44,7 @@ public class Daemon {
     this.mApplication = application;
     mWorkService = workService;
     isInitialized = true;
+    startServiceMayBind(workService);
   }
 
   public void startServiceMayBind(@NonNull final Class<? extends Service> serviceClass) {
