@@ -12,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import com.daemonguard.lib.Daemon;
 import com.daemonguard.lib.DaemonConfig;
 import io.reactivex.Observable;
@@ -31,9 +32,8 @@ public class DaemonService extends Service {
    * Daemon service.
    */
   protected final void onStart() {
-
     if (!Daemon.getInstance().isInitialized) return;
-
+    Log.d(Daemon.TAG, "DaemonService onStart. API=" + Build.VERSION.SDK_INT);
     if (sDisposable != null && !sDisposable.isDisposed()) return;
 
     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N) {
@@ -100,24 +100,27 @@ public class DaemonService extends Service {
     return super.onStartCommand(intent, flags, startId);
   }
 
-  protected void onEnd(Intent rootIntent) {
+  protected void onEnd() {
     if (!Daemon.getInstance().isInitialized) return;
-    Daemon.getInstance().startServiceMayBind(Daemon.getInstance().mWorkService);
-    Daemon.getInstance().startServiceMayBind(DaemonService.class);
+    if (Daemon.getInstance().isDaemonOpen()) {
+      Log.d(Daemon.TAG, "DaemonService onEnd. Daemon is open. Restart services.");
+      Daemon.getInstance().startServiceMayBind(Daemon.getInstance().mWorkService);
+      Daemon.getInstance().startServiceMayBind(DaemonService.class);
+    }
   }
 
   /**
    * 最近任务列表中划掉卡片时回调
    */
   @Override public void onTaskRemoved(Intent rootIntent) {
-    onEnd(rootIntent);
+    onEnd();
   }
 
   /**
    * 设置-正在运行中停止服务时回调
    */
   @Override public void onDestroy() {
-    onEnd(null);
+    onEnd();
   }
 
   /**

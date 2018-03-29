@@ -8,14 +8,19 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Daemon {
 
+  public static final String TAG = "Daemon";
+
   private static Daemon instance;
 
   public boolean isInitialized;
+
+  private boolean isDaemonOpen = true;
 
   public Application mApplication;
 
@@ -28,6 +33,9 @@ public class Daemon {
   protected Daemon() {
   }
 
+  /**
+   * When this singleton is called by :daemon process at first time. :daemon process will copy a new instance.
+   */
   public static Daemon getInstance() {
     if (instance == null) {
       instance = new Daemon();
@@ -65,6 +73,7 @@ public class Daemon {
           BINDER_MAP.remove(serviceClass);
           startServiceSafely(i);
           if (!isInitialized) return;
+          Log.d(TAG, "onServiceDisconnected bindService again: service=" + serviceClass);
           mApplication.bindService(i, this, Context.BIND_AUTO_CREATE);
         }
 
@@ -81,5 +90,25 @@ public class Daemon {
       mApplication.startService(i);
     } catch (Exception ignored) {
     }
+  }
+
+  /**
+   * Stop daemon
+   */
+  public void stopDaemon() {
+    isDaemonOpen = false;
+    cancelJobAlarmSub();
+  }
+
+  public boolean isDaemonOpen() {
+    return isDaemonOpen;
+  }
+
+  /**
+   * 用于在不需要服务运行的时候取消 Job / Alarm / Subscription.
+   */
+  private void cancelJobAlarmSub() {
+    if (!isInitialized) return;
+    mApplication.sendBroadcast(new Intent(WakeUpReceiver.ACTION_CANCEL_JOB_ALARM_SUB));
   }
 }
