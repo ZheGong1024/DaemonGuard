@@ -96,6 +96,7 @@ public class Daemon {
    * Stop daemon
    */
   public void stopDaemon() {
+    Log.d(TAG, "stopDaemon");
     isDaemonOpen = false;
     cancelJobAlarmSub();
   }
