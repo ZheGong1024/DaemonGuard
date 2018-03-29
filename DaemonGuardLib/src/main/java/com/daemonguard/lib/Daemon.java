@@ -58,6 +58,10 @@ public class Daemon {
 
   public void startServiceMayBind(@NonNull final Class<? extends Service> serviceClass) {
     if (!isInitialized) return;
+    Log.d(TAG, "startServiceMayBind serviceClass=" + serviceClass + ", StackTrace:");
+    for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
+      Log.d(TAG, element.toString());
+    }
     final Intent i = new Intent(mApplication, serviceClass);
     startServiceSafely(i);
     ServiceConnection bound = BIND_STATE_MAP.get(serviceClass);

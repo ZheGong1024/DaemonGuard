@@ -28,6 +28,7 @@ public abstract class DaemonWorkerService extends Service {
   protected int onStart() {
     //启动守护服务，运行在:watch子进程中
     //Daemon.getInstance().startServiceMayBind(DaemonService.class);
+    Log.d(Daemon.TAG, "DaemonWorkerService onStart. API=" + Build.VERSION.SDK_INT);
     if (mFirstStarted) {
       mFirstStarted = false;
       //启动前台服务而不显示通知的漏洞已在 API Level 25 修复，大快人心！
