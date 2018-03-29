@@ -21,7 +21,7 @@ public class Daemon {
 
   public Class<? extends Service> mWorkService;
 
-  static final Map<Class<? extends Service>, ServiceConnection> BIND_STATE_MAP = new HashMap<>();
+  public final Map<Class<? extends Service>, ServiceConnection> BIND_STATE_MAP = new HashMap<>();
 
   protected Daemon() {
   }

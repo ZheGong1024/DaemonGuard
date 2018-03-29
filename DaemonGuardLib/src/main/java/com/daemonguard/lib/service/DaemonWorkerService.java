@@ -13,6 +13,7 @@ import com.daemonguard.lib.DaemonConfig;
 import com.daemonguard.lib.WakeUpReceiver;
 
 public abstract class DaemonWorkerService extends Service {
+
   protected boolean mFirstStarted = true;
   private boolean shouldStopService = false;
 
