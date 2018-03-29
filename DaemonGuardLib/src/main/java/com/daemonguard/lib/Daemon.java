@@ -23,6 +23,8 @@ public class Daemon {
 
   public final Map<Class<? extends Service>, ServiceConnection> BIND_STATE_MAP = new HashMap<>();
 
+  public final Map<Class<? extends Service>, IBinder> BINDER_MAP = new HashMap<>();
+
   protected Daemon() {
   }
 
@@ -55,10 +57,12 @@ public class Daemon {
       mApplication.bindService(i, new ServiceConnection() {
         @Override public void onServiceConnected(ComponentName name, IBinder service) {
           BIND_STATE_MAP.put(serviceClass, this);
+          BINDER_MAP.put(serviceClass, service);
         }
 
         @Override public void onServiceDisconnected(ComponentName name) {
           BIND_STATE_MAP.remove(serviceClass);
+          BINDER_MAP.remove(serviceClass);
           startServiceSafely(i);
           if (!isInitialized) return;
           mApplication.bindService(i, this, Context.BIND_AUTO_CREATE);

@@ -10,7 +10,6 @@ public class MyWorkerService extends DaemonWorkerService {
   private final IBinder mBinder = new LocalBinder();
 
   @Override public IBinder onBind(Intent intent, Void v) {
-
     return mBinder;
   }
 
