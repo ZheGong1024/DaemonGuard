@@ -1,7 +1,11 @@
 package com.daemonguard.lib.service;
 
+import android.app.AlarmManager;
 import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -12,9 +16,13 @@ import android.util.Log;
 import com.daemonguard.lib.Daemon;
 import com.daemonguard.lib.DaemonConfig;
 
+import static com.daemonguard.lib.DaemonConfig.FOREGROUND_SERVICE_HASH_CODE;
+
 public abstract class DaemonWorkerService extends Service {
 
   protected boolean mFirstStarted = true;
+
+  protected static PendingIntent sPendingIntent;
 
   @Nullable public abstract IBinder onBind(Intent intent, Void alwaysNull);
 
@@ -42,9 +50,32 @@ public abstract class DaemonWorkerService extends Service {
                   new Intent(getApplication(), DaemonWorkerNotificationService.class));
         }
       }
-      //getPackageManager().setComponentEnabledSetting(
-      //    new ComponentName(getPackageName(), DaemonService.class.getName()),
-      //    PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
+
+      //定时检查 AbsWorkService 是否在运行，如果不在运行就把它拉起来
+      //Android 5.0+ 使用 JobScheduler，效果比 AlarmManager 好
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        JobInfo.Builder builder = new JobInfo.Builder(FOREGROUND_SERVICE_HASH_CODE,
+            new ComponentName(Daemon.getInstance().mApplication, DaemonJobService.class));
+        builder.setPeriodic(DaemonConfig.WAKEUP_INTERVAL);
+        //Android 7.0+ 增加了一项针对 JobScheduler 的新限制，最小间隔只能是下面设定的数字
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+          builder.setPeriodic(JobInfo.getMinPeriodMillis(), JobInfo.getMinFlexMillis());
+        }
+        builder.setPersisted(true);
+        JobScheduler scheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
+        if (scheduler != null) scheduler.schedule(builder.build());
+      } else {
+        //Android 4.4- 使用 AlarmManager
+        AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
+        Intent i = new Intent(Daemon.getInstance().mApplication, Daemon.getInstance().mWorkService);
+        sPendingIntent = PendingIntent.getService(Daemon.getInstance().mApplication,
+            FOREGROUND_SERVICE_HASH_CODE, i, PendingIntent.FLAG_UPDATE_CURRENT);
+        if (am != null) {
+          am.setRepeating(AlarmManager.RTC_WAKEUP,
+              System.currentTimeMillis() + DaemonConfig.WAKEUP_INTERVAL,
+              DaemonConfig.WAKEUP_INTERVAL, sPendingIntent);
+        }
+      }
     }
 
     return START_STICKY;
@@ -80,6 +111,25 @@ public abstract class DaemonWorkerService extends Service {
    */
   @Override public void onDestroy() {
     onEnd();
+  }
+
+  /**
+   * 用于在不需要服务运行的时候取消 Job / Alarm / Subscription.
+   *
+   * 因 WatchDogService 运行在 :watch 子进程, 请勿在主进程中直接调用此方法.
+   * 而是向 WakeUpReceiver 发送一个 Action 为 WakeUpReceiver.ACTION_CANCEL_JOB_ALARM_SUB 的广播.
+   */
+  public static void cancelJobAlarmSub() {
+    if (!Daemon.getInstance().isInitialized) return;
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      JobScheduler jobScheduler =
+          (JobScheduler) Daemon.getInstance().mApplication.getSystemService(JOB_SCHEDULER_SERVICE);
+      if (jobScheduler != null) jobScheduler.cancel(DaemonConfig.FOREGROUND_SERVICE_HASH_CODE);
+    } else {
+      AlarmManager alarmManager =
+          (AlarmManager) Daemon.getInstance().mApplication.getSystemService(ALARM_SERVICE);
+      if (alarmManager != null) if (sPendingIntent != null) alarmManager.cancel(sPendingIntent);
+    }
   }
 
   public static class DaemonWorkerNotificationService extends Service {

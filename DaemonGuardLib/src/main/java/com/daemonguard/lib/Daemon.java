@@ -9,6 +9,7 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.util.Log;
+import com.daemonguard.lib.service.DaemonWorkerService;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -118,6 +119,6 @@ public class Daemon {
    */
   private void cancelJobAlarmSub() {
     if (!isInitialized) return;
-    mApplication.sendBroadcast(new Intent(WakeUpReceiver.ACTION_CANCEL_JOB_ALARM_SUB));
+    DaemonWorkerService.cancelJobAlarmSub();
   }
 }
