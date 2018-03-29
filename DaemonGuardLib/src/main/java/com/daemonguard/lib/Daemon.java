@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
-import com.daemonguard.lib.service.DaemonWorkService;
 import java.util.HashMap;
 import java.util.Map;
 

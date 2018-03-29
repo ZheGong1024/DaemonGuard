@@ -1,7 +1,7 @@
 package com.daemonguard.lib;
 
 import com.daemonguard.lib.service.DaemonService;
-import com.daemonguard.lib.service.DaemonWorkService;
+import com.daemonguard.lib.service.DaemonWorkerService;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 /**
@@ -16,7 +16,7 @@ public class DaemonConfig {
    * Hashcode for worker service.
    */
   public static int WORKER_SERVICE_HASH_CODE =
-      new HashCodeBuilder().append(DaemonWorkService.class.getSimpleName()).toHashCode();
+      new HashCodeBuilder().append(DaemonWorkerService.class.getSimpleName()).toHashCode();
   /**
    * Hashcode for the foreground service.
    */
