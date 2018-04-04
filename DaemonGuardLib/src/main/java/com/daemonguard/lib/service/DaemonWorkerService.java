@@ -8,15 +8,12 @@ import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import com.daemonguard.lib.Daemon;
 import com.daemonguard.lib.DaemonConfig;
-
-import static com.daemonguard.lib.DaemonConfig.FOREGROUND_SERVICE_HASH_CODE;
 
 public abstract class DaemonWorkerService extends Service {
 
@@ -54,7 +51,7 @@ public abstract class DaemonWorkerService extends Service {
       //定时检查 AbsWorkService 是否在运行，如果不在运行就把它拉起来
       //Android 5.0+ 使用 JobScheduler，效果比 AlarmManager 好
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        JobInfo.Builder builder = new JobInfo.Builder(FOREGROUND_SERVICE_HASH_CODE,
+        JobInfo.Builder builder = new JobInfo.Builder(DaemonConfig.JOB_HASH_CODE,
             new ComponentName(Daemon.getInstance().mApplication, DaemonJobService.class));
         builder.setPeriodic(DaemonConfig.WAKEUP_INTERVAL);
         //Android 7.0+ 增加了一项针对 JobScheduler 的新限制，最小间隔只能是下面设定的数字
@@ -68,8 +65,9 @@ public abstract class DaemonWorkerService extends Service {
         //Android 4.4- 使用 AlarmManager
         AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
         Intent i = new Intent(Daemon.getInstance().mApplication, Daemon.getInstance().mWorkService);
-        sPendingIntent = PendingIntent.getService(Daemon.getInstance().mApplication,
-            FOREGROUND_SERVICE_HASH_CODE, i, PendingIntent.FLAG_UPDATE_CURRENT);
+        sPendingIntent =
+            PendingIntent.getService(Daemon.getInstance().mApplication, DaemonConfig.JOB_HASH_CODE,
+                i, PendingIntent.FLAG_UPDATE_CURRENT);
         if (am != null) {
           am.setRepeating(AlarmManager.RTC_WAKEUP,
               System.currentTimeMillis() + DaemonConfig.WAKEUP_INTERVAL,
@@ -124,7 +122,7 @@ public abstract class DaemonWorkerService extends Service {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       JobScheduler jobScheduler =
           (JobScheduler) Daemon.getInstance().mApplication.getSystemService(JOB_SCHEDULER_SERVICE);
-      if (jobScheduler != null) jobScheduler.cancel(DaemonConfig.FOREGROUND_SERVICE_HASH_CODE);
+      if (jobScheduler != null) jobScheduler.cancel(DaemonConfig.JOB_HASH_CODE);
     } else {
       AlarmManager alarmManager =
           (AlarmManager) Daemon.getInstance().mApplication.getSystemService(ALARM_SERVICE);

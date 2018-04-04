@@ -117,7 +117,7 @@ public class Daemon {
   /**
    * 用于在不需要服务运行的时候取消 Job / Alarm / Subscription.
    */
-  private void cancelJobAlarmSub() {
+  void cancelJobAlarmSub() {
     if (!isInitialized) return;
     DaemonWorkerService.cancelJobAlarmSub();
   }

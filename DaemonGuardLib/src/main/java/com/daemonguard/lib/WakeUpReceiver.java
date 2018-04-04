@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
-import com.daemonguard.lib.service.DaemonService;
 
 public class WakeUpReceiver extends BroadcastReceiver {
 
@@ -24,7 +23,7 @@ public class WakeUpReceiver extends BroadcastReceiver {
    */
   @Override public void onReceive(Context context, Intent intent) {
     if (intent != null && ACTION_CANCEL_JOB_ALARM_SUB.equals(intent.getAction())) {
-      DaemonService.cancelJobAlarmSub();
+      Daemon.getInstance().cancelJobAlarmSub();
       return;
     }
     if (!Daemon.getInstance().isInitialized) return;

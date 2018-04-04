@@ -1,6 +1,6 @@
 package com.daemonguard.lib;
 
-import com.daemonguard.lib.service.DaemonService;
+import com.daemonguard.lib.service.DaemonJobService;
 import com.daemonguard.lib.service.DaemonWorkerService;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -20,8 +20,8 @@ public class DaemonConfig {
   /**
    * Hashcode for the foreground service.
    */
-  public static int FOREGROUND_SERVICE_HASH_CODE =
-      new HashCodeBuilder().append(DaemonService.class.getSimpleName()).toHashCode();
+  public static int JOB_HASH_CODE =
+      new HashCodeBuilder().append(DaemonJobService.class.getSimpleName()).toHashCode();
 
   /**
    * Wakeup interval.
