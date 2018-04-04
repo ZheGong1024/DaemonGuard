@@ -24,23 +24,19 @@ public abstract class DaemonWorkerService extends Service {
   @Nullable public abstract IBinder onBind(Intent intent, Void alwaysNull);
 
   /**
-   * 1.防止重复启动，可以任意调用 DaemonEnv.startServiceMayBind(Class serviceClass);
-   * 2.利用漏洞启动前台服务而不显示通知;
-   * 3.在子线程中运行定时任务，处理了运行前检查和销毁时保存的问题;
-   * 4.启动守护服务;
-   * 5.守护 Service 组件的启用状态, 使其不被 MAT 等工具禁用.
+   * 1. API level < 25: Start as foreground service without notifications when API < 25. (Use the flaw in Android framework)
+   * 2. API level > 20: Use JobScheduler to wakeup the process.
+   * 3. API level < 21: Use AlarmManager to wakeup the process.
    */
   protected int onStart() {
-    //启动守护服务，运行在:watch子进程中
-    //Daemon.getInstance().startServiceMayBind(DaemonService.class);
     Log.d(Daemon.TAG, "DaemonWorkerService onStart. API=" + Build.VERSION.SDK_INT);
     if (mFirstStarted) {
       mFirstStarted = false;
-      //启动前台服务而不显示通知的漏洞已在 API Level 25 修复，大快人心！
+      // Start as foreground service without notifications when API < 25. (Use the flaw in Android framework)
       if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N) {
-        //利用漏洞在 API Level 17 及以下的 Android 系统中，启动前台服务而不显示通知
+        // For API level < 18, only need to start foreground with a new Notification.
         startForeground(DaemonConfig.WORKER_SERVICE_HASH_CODE, new Notification());
-        //利用漏洞在 API Level 18 及以上的 Android 系统中，启动前台服务而不显示通知
+        // After API level 18, start a foreground with the same hashcode and then stop itself to hide the notifications.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
           Daemon.getInstance()
               .startServiceSafely(
@@ -48,8 +44,8 @@ public abstract class DaemonWorkerService extends Service {
         }
       }
 
-      //定时检查 AbsWorkService 是否在运行，如果不在运行就把它拉起来
-      //Android 5.0+ 使用 JobScheduler，效果比 AlarmManager 好
+      // Check DaemonJobService regularly to guard it.
+      // For Android 5.0+, use JobScheduler.
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
         JobInfo.Builder builder = new JobInfo.Builder(DaemonConfig.JOB_HASH_CODE,
             new ComponentName(Daemon.getInstance().mApplication, DaemonJobService.class));
@@ -62,7 +58,7 @@ public abstract class DaemonWorkerService extends Service {
         JobScheduler scheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
         if (scheduler != null) scheduler.schedule(builder.build());
       } else {
-        //Android 4.4- 使用 AlarmManager
+        // Before Android 5.0, use AlarmManager.
         AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
         Intent i = new Intent(Daemon.getInstance().mApplication, Daemon.getInstance().mWorkService);
         sPendingIntent =
@@ -93,29 +89,22 @@ public abstract class DaemonWorkerService extends Service {
     if (Daemon.getInstance().isDaemonOpen()) {
       Log.d(Daemon.TAG, "DaemonWorkerService onEnd. Daemon is open. Restart services.");
       Daemon.getInstance().startServiceMayBind(Daemon.getInstance().mWorkService);
-      //Daemon.getInstance().startServiceMayBind(DaemonService.class);
     }
   }
 
   /**
-   * 最近任务列表中划掉卡片时回调
+   * Swiping close
    */
   @Override public void onTaskRemoved(Intent rootIntent) {
     onEnd();
   }
 
-  /**
-   * 设置-正在运行中停止服务时回调
-   */
   @Override public void onDestroy() {
     onEnd();
   }
 
   /**
-   * 用于在不需要服务运行的时候取消 Job / Alarm / Subscription.
-   *
-   * 因 WatchDogService 运行在 :watch 子进程, 请勿在主进程中直接调用此方法.
-   * 而是向 WakeUpReceiver 发送一个 Action 为 WakeUpReceiver.ACTION_CANCEL_JOB_ALARM_SUB 的广播.
+   * Cancel JobScheduler and Alarm when we don't need it.
    */
   public static void cancelJobAlarmSub() {
     if (!Daemon.getInstance().isInitialized) return;
@@ -133,7 +122,7 @@ public abstract class DaemonWorkerService extends Service {
   public static class DaemonWorkerNotificationService extends Service {
 
     /**
-     * 利用漏洞在 API Level 18 及以上的 Android 系统中，启动前台服务而不显示通知
+     * Use ForegroundService without notifications with API levels > 18 and < 25.
      */
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
       startForeground(DaemonConfig.WORKER_SERVICE_HASH_CODE, new Notification());

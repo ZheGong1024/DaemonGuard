@@ -118,7 +118,7 @@ public class Daemon {
   public void stopDaemon() {
     Log.d(TAG, "stopDaemon");
     isDaemonOpen = false;
-    cancelJobAlarmSub();
+    DaemonWorkerService.cancelJobAlarmSub();
   }
 
   /**
@@ -126,13 +126,5 @@ public class Daemon {
    */
   public boolean isDaemonOpen() {
     return isDaemonOpen;
-  }
-
-  /**
-   * Cancel JobScheduler and Alarm when we don't need them.
-   */
-  void cancelJobAlarmSub() {
-    if (!isInitialized) return;
-    DaemonWorkerService.cancelJobAlarmSub();
   }
 }
