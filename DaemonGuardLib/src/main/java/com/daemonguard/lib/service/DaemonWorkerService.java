@@ -50,7 +50,7 @@ public abstract class DaemonWorkerService extends Service {
         JobInfo.Builder builder = new JobInfo.Builder(DaemonConfig.JOB_HASH_CODE,
             new ComponentName(Daemon.getInstance().mApplication, DaemonJobService.class));
         builder.setPeriodic(DaemonConfig.WAKEUP_INTERVAL);
-        //Android 7.0+ 增加了一项针对 JobScheduler 的新限制，最小间隔只能是下面设定的数字
+        // For Android 7.0+, there is a new limitation for the min periodic.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
           builder.setPeriodic(JobInfo.getMinPeriodMillis(), JobInfo.getMinFlexMillis());
         }
