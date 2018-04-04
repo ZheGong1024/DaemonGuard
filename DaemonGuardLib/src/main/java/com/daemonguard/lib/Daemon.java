@@ -57,6 +57,11 @@ public class Daemon {
     startServiceMayBind(workService);
   }
 
+  /**
+   * Use BIND_STATE_MAP to avoid duplicated start and bind.
+   *
+   * @param serviceClass Service class
+   */
   public void startServiceMayBind(@NonNull final Class<? extends Service> serviceClass) {
     if (!isInitialized) return;
     Log.d(TAG, "startServiceMayBind serviceClass=" + serviceClass);
@@ -87,12 +92,18 @@ public class Daemon {
     }
   }
 
-  public void printStackTrace() {
+  /**
+   * Print stack trace.
+   */
+  private void printStackTrace() {
     for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
       Log.d(TAG, element.toString());
     }
   }
 
+  /**
+   * Start service when daemon is initialized.
+   */
   public void startServiceSafely(Intent i) {
     if (!isInitialized) return;
     try {
@@ -110,12 +121,15 @@ public class Daemon {
     cancelJobAlarmSub();
   }
 
+  /**
+   * Check whether daemon is open.
+   */
   public boolean isDaemonOpen() {
     return isDaemonOpen;
   }
 
   /**
-   * 用于在不需要服务运行的时候取消 Job / Alarm / Subscription.
+   * Cancel JobScheduler and Alarm when we don't need them.
    */
   void cancelJobAlarmSub() {
     if (!isInitialized) return;
