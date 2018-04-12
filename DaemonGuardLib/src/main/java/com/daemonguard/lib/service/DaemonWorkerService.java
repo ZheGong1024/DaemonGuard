@@ -86,10 +86,7 @@ public abstract class DaemonWorkerService extends Service {
 
   protected void onEnd() {
     if (!Daemon.getInstance().isInitialized) return;
-    if (Daemon.getInstance().isDaemonOpen()) {
-      Log.d(Daemon.TAG, "DaemonWorkerService onEnd. Daemon is open. Restart services.");
-      Daemon.getInstance().startServiceMayBind(Daemon.getInstance().mWorkService);
-    }
+    Daemon.getInstance().startServiceMayBind(Daemon.getInstance().mWorkService);
   }
 
   /**

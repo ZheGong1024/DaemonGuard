@@ -29,8 +29,6 @@ public class Daemon {
 
   public final Map<Class<? extends Service>, ServiceConnection> BIND_STATE_MAP = new HashMap<>();
 
-  public final Map<Class<? extends Service>, IBinder> BINDER_MAP = new HashMap<>();
-
   protected Daemon() {
   }
 
@@ -49,21 +47,27 @@ public class Daemon {
    *
    * @param application Application context.
    */
-  public void start(@NonNull Application application,
-      @NonNull Class<? extends Service> workService) {
+  public void start(@NonNull Application application, @NonNull Class<? extends Service> workService,
+      boolean startDaemon) {
     this.mApplication = application;
     mWorkService = workService;
     isInitialized = true;
-    startServiceMayBind(workService);
+    isDaemonOpen = startDaemon;
+    startServiceMayBind(workService, true);
   }
 
   /**
    * Use BIND_STATE_MAP to avoid duplicated start and bind.
    *
    * @param serviceClass Service class
+   * @param initialStart Whether this is the initial start for the service.
    */
-  public void startServiceMayBind(@NonNull final Class<? extends Service> serviceClass) {
+  private void startServiceMayBind(@NonNull final Class<? extends Service> serviceClass,
+      boolean initialStart) {
     if (!isInitialized) return;
+    // Daemon is not open and it is not the initial start.
+    if (!isDaemonOpen && !initialStart) return;
+
     Log.d(TAG, "startServiceMayBind serviceClass=" + serviceClass);
     printStackTrace();
     final Intent i = new Intent(mApplication, serviceClass);
@@ -73,16 +77,16 @@ public class Daemon {
       mApplication.bindService(i, new ServiceConnection() {
         @Override public void onServiceConnected(ComponentName name, IBinder service) {
           BIND_STATE_MAP.put(serviceClass, this);
-          BINDER_MAP.put(serviceClass, service);
         }
 
         @Override public void onServiceDisconnected(ComponentName name) {
           BIND_STATE_MAP.remove(serviceClass);
-          BINDER_MAP.remove(serviceClass);
-          startServiceSafely(i);
-          if (!isInitialized) return;
-          Log.d(TAG, "onServiceDisconnected bindService again: service=" + serviceClass);
-          mApplication.bindService(i, this, Context.BIND_AUTO_CREATE);
+          if (isDaemonOpen) {
+            startServiceSafely(i);
+            if (!isInitialized) return;
+            Log.d(TAG, "onServiceDisconnected bindService again: service=" + serviceClass);
+            mApplication.bindService(i, this, Context.BIND_AUTO_CREATE);
+          }
         }
 
         @Override public void onBindingDied(ComponentName name) {
@@ -90,6 +94,15 @@ public class Daemon {
         }
       }, Context.BIND_AUTO_CREATE);
     }
+  }
+
+  /**
+   * Use BIND_STATE_MAP to avoid duplicated start and bind.
+   *
+   * @param serviceClass Service class
+   */
+  public void startServiceMayBind(@NonNull final Class<? extends Service> serviceClass) {
+    startServiceMayBind(serviceClass, false);
   }
 
   /**
@@ -108,7 +121,8 @@ public class Daemon {
     if (!isInitialized) return;
     try {
       mApplication.startService(i);
-    } catch (Exception ignored) {
+    } catch (Exception e) {
+      Log.e(TAG, "startServiceSafely", e);
     }
   }
 
@@ -116,15 +130,7 @@ public class Daemon {
    * Stop daemon
    */
   public void stopDaemon() {
-    Log.d(TAG, "stopDaemon");
     isDaemonOpen = false;
     DaemonWorkerService.cancelJobAlarmSub();
-  }
-
-  /**
-   * Check whether daemon is open.
-   */
-  public boolean isDaemonOpen() {
-    return isDaemonOpen;
   }
 }

@@ -4,7 +4,6 @@ import android.annotation.TargetApi;
 import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.os.Build;
-import android.util.Log;
 import com.daemonguard.lib.Daemon;
 
 /**
@@ -12,8 +11,7 @@ import com.daemonguard.lib.Daemon;
  */
 @TargetApi(Build.VERSION_CODES.LOLLIPOP) public class DaemonJobService extends JobService {
   @Override public boolean onStartJob(JobParameters params) {
-    if (Daemon.getInstance().isInitialized && Daemon.getInstance().isDaemonOpen()) {
-      Log.d(Daemon.TAG, "DaemonJobService onStartJob. Daemon is open, start worker service.");
+    if (Daemon.getInstance().isInitialized) {
       Daemon.getInstance().startServiceMayBind(Daemon.getInstance().mWorkService);
     }
     return false;
