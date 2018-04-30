@@ -21,7 +21,7 @@ public class DaemonConfig {
    * Hashcode for the foreground service.
    */
   public static int JOB_HASH_CODE =
-      new HashCodeBuilder().append(DaemonJobService.class.getSimpleName()).toHashCode();
+      new HashCodeBuilder().append("DaemonJobService_JOB_HASH_CODE").toHashCode();
 
   /**
    * Wakeup interval.
